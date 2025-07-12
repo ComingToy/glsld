@@ -129,7 +129,7 @@ void Protocol::initialize_(nlohmann::json& req)
 
     // std::cerr << "build reqsp capabilities: " << std::endl << result.dump() << std::endl;
     nlohmann::json params = req["params"];
-    workspace_.set_root(params["rootPath"]);
+    workspace_.init(params["rootPath"]);
 
     init_ = true;
     // std::cerr << "init workspace at root: " << workspace_.get_root() << std::endl;

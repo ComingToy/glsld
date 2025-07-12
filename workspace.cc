@@ -1,10 +1,55 @@
 #include "workspace.hpp"
+#include "cxxopts.hpp"
 #include "doc.hpp"
+#include "nlohmann/json.hpp"
+#include <cstdio>
+#include <filesystem>
 #include <iostream>
 #include <tuple>
 #include <vector>
 
 Workspace::Workspace() : root_("/") {}
+
+bool Workspace::init(std::string const& root)
+{
+    namespace fs = std::filesystem;
+    set_root(root);
+
+    fs::path compile_commands_db_path = fs::path(root_) / fs::path("compile_commands.json");
+    std::ifstream ifs(compile_commands_db_path.string());
+
+    nlohmann::json compile_commands_db = nlohmann::json::parse(ifs);
+
+    for (auto pos = compile_commands_db.begin(); pos != compile_commands_db.end(); ++pos) {
+        auto& item = *pos;
+        struct CompileCommand command = {item["directory"], item["command"], item["file"], item["output"]};
+
+        fs::path file(command.file);
+        std::string extension = file.extension();
+
+        /*
+		 * .vert for a vertex shader
+		 * .tesc for a tessellation control shader
+		 * .tese for a tessellation evaluation shader
+		 * .geom for a geometry shader
+		 * .frag for a fragment shader
+		 * .comp for a compute shader
+		 * */
+        if (extension != ".vert" && extension != ".tesc" && extension != ".tese" && extension != ".geom" &&
+            extension != ".frag" && extension != ".comp") {
+            continue;
+        }
+
+        compile_commands_.push_back(command);
+    }
+
+    for (auto& item : compile_commands_) {
+        fprintf(stderr, "load compile_commands item: directory = %s, command = %s, file = %s, output = %s\n",
+                item.directory.c_str(), item.command.c_str(), item.file.c_str(), item.output.c_str());
+    }
+
+    return true;
+}
 
 void Workspace::set_root(std::string const& root) { root_ = root; }
 std::string const& Workspace::get_root() const { return root_; }

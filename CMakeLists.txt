@@ -7,6 +7,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(json)
 add_subdirectory(glslang)
+add_subdirectory(cxxopts)
 
 add_executable(compile_compute_shader compile_compute_shader.cc) 
 target_link_libraries(compile_compute_shader PUBLIC MachineIndependent)
@@ -28,7 +29,7 @@ add_library(
 	lsp_defs.hpp
 )
 
-target_link_libraries(lsp PUBLIC MachineIndependent nlohmann_json::nlohmann_json)
+target_link_libraries(lsp PUBLIC MachineIndependent nlohmann_json::nlohmann_json cxxopts)
 target_include_directories(lsp PUBLIC json/include/ glslang ${CMAKE_SOURCE_DIR})
 
 add_executable(glsld glsld.cc)

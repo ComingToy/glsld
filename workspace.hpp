@@ -4,6 +4,14 @@
 #include <map>
 #include <vector>
 class Workspace {
+    struct CompileCommand {
+        std::string directory;
+        std::string command;
+        std::string file;
+        std::string output;
+    };
+
+    std::vector<CompileCommand> compile_commands_;
     std::string root_;
     std::map<std::string, Doc> docs_;
 
@@ -13,6 +21,8 @@ public:
     Workspace(Workspace&&) = delete;
     Workspace& operator=(const Workspace&) = delete;
     Workspace& operator=(Workspace&&) = delete;
+
+    bool init(std::string const& root);
 
     void update_doc(std::string const& uri, const int version, std::string const& text);
     void add_doc(Doc&& doc);
