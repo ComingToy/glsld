@@ -28,8 +28,8 @@ Doc::Doc(std::string const& uri, const int version, std::string const& text, Com
     resource_->uri = uri;
     resource_->version = version;
 
-    set_text(text);
     infer_language_();
+    set_text(text);
     resource_->shader = nullptr;
 }
 
@@ -85,7 +85,6 @@ Doc& Doc::operator=(Doc&& rhs)
 
 void Doc::infer_language_()
 {
-    // support compute stage only now
     if (!resource_)
         return;
 

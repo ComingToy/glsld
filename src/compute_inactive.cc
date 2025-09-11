@@ -23,24 +23,29 @@ ComputeInactiveHelper::ComputeInactiveHelper(std::vector<std::string> const& lin
         return sv.substr(0, kw.size()) == kw;
     };
 
+// #define PRINT_TOK(tok) fprintf(stderr, "tok %s at %d\n", tok, i)
+#define PRINT_TOK(tok)
+
     std::vector<_Token> toks;
     for (int i = 0; i < lines.size(); ++i) {
         if (is_kw(i, "#if")) {
             toks.push_back({_Token::TokenKind::IF, i});
-            // fprintf(stderr, "tok %s at %d\n", "#if", i);
+			PRINT_TOK("#if");
         } else if (is_kw(i, "#elif")) {
             toks.push_back({_Token::TokenKind::ELIF, i});
-            // fprintf(stderr, "tok %s at %d\n", "#elif", i);
+			PRINT_TOK("#elif");
         } else if (is_kw(i, "#endif")) {
             toks.push_back({_Token::TokenKind::ENDIF, i});
-            // fprintf(stderr, "tok %s at %d\n", "#endif", i);
+			PRINT_TOK("#endif");
         } else if (is_kw(i, "#else")) {
             toks.push_back({_Token::TokenKind::ELSE, i});
-            // fprintf(stderr, "tok %s at %d\n", "#else", i);
+			PRINT_TOK("#else");
         } else {
             continue;
         }
     }
+
+#undef PRINT_TOK
 
     inputs_.swap(toks);
 }
@@ -159,12 +164,14 @@ void ComputeInactiveHelper::compute_inactive(ComputeInactiveHelper::BlockAST* bl
     };
 
     auto pos = cond_.find(block->lines.if_ + 2);
+    bool cond = false;
     if (pos == cond_.end()) {
         fprintf(stderr, "#if at line %d but cond result not found\n", block->lines.if_);
-        return;
+    } else {
+        cond = pos->second;
     }
 
-    if (!pos->second) {
+    if (!cond) {
         if (block->lines.elif_.empty() && block->lines.el_ < 0) { //#if .. #endif
             result.push_back(Range{block->lines.if_, block->lines.endif_});
             return;
@@ -175,12 +182,14 @@ void ComputeInactiveHelper::compute_inactive(ComputeInactiveHelper::BlockAST* bl
             result.push_back({block->lines.if_, block->lines.elif_.front()});
             for (int i = 0; i < block->lines.elif_.size(); ++i) {
                 pos = cond_.find(block->lines.elif_[i] + 2);
-                if (pos == cond_.end())
-                    return;
+                cond = pos == cond_.end() ? false : pos->second;
+                if (pos == cond_.end()) {
+                    fprintf(stderr, "#elif at line %d but cond result not found\n", block->lines.elif_[i]);
+                }
 
-                if (pos->second) {
+                if (cond) {
                     compute_fn(block->elif[i]);
-                    break;
+                    continue;
                 } else {
                     int end = i == block->lines.elif_.size() - 1 ? block->lines.endif_ : block->lines.elif_[i + 1];
                     result.push_back({block->lines.elif_[i], end});
@@ -192,13 +201,15 @@ void ComputeInactiveHelper::compute_inactive(ComputeInactiveHelper::BlockAST* bl
 
             for (int i = 0; i < block->lines.elif_.size(); ++i) {
                 pos = cond_.find(block->lines.elif_[i] + 2);
-                if (pos == cond_.end())
-                    return;
+                cond = pos == cond_.end() ? false : pos->second;
+                if (pos == cond_.end()) {
+                    fprintf(stderr, "#elif at line %d but cond result not found\n", block->lines.elif_[i]);
+                }
 
-                if (pos->second) {
+                if (cond) {
                     compute_fn(block->elif[i]);
                     goto_el = false;
-                    break;
+                    continue;
                 } else {
                     int end = i == block->lines.elif_.size() - 1 ? block->lines.el_ : block->lines.elif_[i + 1];
                     result.push_back({block->lines.elif_[i], end});
